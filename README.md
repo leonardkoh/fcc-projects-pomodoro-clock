@@ -57,3 +57,5 @@ Tasks Required:
 
 <li>User Story #28: The audio element with id of beep must stop playing and be rewound to the beginning when the element with the id of reset is clicked.</li>
 </ul>
+
+Deployed on: http://lk-pomodoro-clock.netlify.com
