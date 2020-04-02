@@ -1,6 +1,16 @@
 import React from 'react';
 import './App.css';
 
+const INTIALSTATE = {
+  breakLength: 5,
+  sessionLength: 25,
+  sessionTimeLeft: 25*1000*60, //ms
+  sessionTimer: 0, //id of session timer
+  breakTimeLeft: 5*1000*60, //ms
+  breakTimer: 0, //id of break timer
+  isRunning: false
+}
+
 class BreakLength extends React.Component {
   constructor(props) {
     super(props)
@@ -62,60 +72,98 @@ class SessionLength extends React.Component {
 class App extends React.Component {
   constructor(props) {
     super(props)
-    this.state = {
-      breakLength: 5,
-      sessionLength: 25,
-      timeLeft: 0
-    }
+    this.state = INTIALSTATE
 
-    this.initaliseClock = this.initaliseClock.bind(this);
+    this.getTimeLeft = this.getTimeLeft.bind(this);
+    this.initSessionClock = this.initSessionClock.bind(this);
+    this.initBreakClock = this.initBreakClock.bind(this);
     this.changeBreak = this.changeBreak.bind(this);
     this.changeSession = this.changeSession.bind(this);
     this.startStopClick = this.startStopClick.bind(this);
     this.resetClick = this.resetClick.bind(this);
   }
 
-  initaliseClock(timeLeft) {
-    let timeNow = new Date();
-
-    // let m = timeNow.getMinutes();
-    // let s = timeNow.getSeconds();
-    // setTimeout(alert("CLOCK INITIALISED"),3000);
+  getTimeLeft(time_ms) {
+    let m = Math.floor((time_ms % (1000 * 60 * 60)) / (1000 * 60));
+    let s = Math.floor((time_ms % (1000 * 60)) / 1000);
+    
+    if(m>=0 && m<10)
+      return s>=0 && s<10 ? `0${m}:0${s}` : `0${m}:${s}`;
+    else
+      return s>=0 && s<10 ? `${m}:0${s}` : `${m}:${s}`;
   }
 
+  initSessionClock(time_ms) {
+    let timer = setInterval(() => {
+      time_ms -= 1000;
+  
+      this.setState({ sessionTimeLeft: time_ms }); 
+
+      if(this.state.sessionTimeLeft<0){
+        clearInterval(this.state.sessionTimer);
+        this.setState({ breakTimer: this.initBreakClock(this.state.breakLength*60*1000)});
+      }
+    }, 1000)
+    return timer;
+  }
+
+  initBreakClock(time_ms) {
+    let timer = setInterval(() => {
+      time_ms -= 1000;
+
+      this.setState({ breakTimeLeft: time_ms}); 
+
+      if(this.state.breakTimeLeft<=0) {
+        clearInterval(this.state.breakTimer);
+        this.setState({ sessionTimer: this.initSessionClock(this.state.sessionLength*60*1000) })
+      }
+    }, 1000)
+    return timer;
+  }
+  
+
   changeBreak(e) {
-    if(e.currentTarget.id==='break-decrement' && this.state.breakLength===1)
-      this.setState({ breakLength: 1 })
-    else if(e.currentTarget.id==='break-increment' && this.state.breakLength===60)
-      this.setState({ breakLength: 60 })
+    if(e.currentTarget.id==='break-decrement' && this.state.breakLength<=1)
+      this.setState({ breakLength: 1, breakTimeLeft: 1*1000*60 })
+    else if(e.currentTarget.id==='break-increment' && this.state.breakLength>=60)
+      this.setState({ breakLength: 60, breakTimeLeft: 60*1000*60 })
     else 
-      e.currentTarget.id==='break-decrement' ? this.setState({ breakLength: --this.state.breakLength }) : this.setState({ breakLength: ++this.state.breakLength });
+      e.currentTarget.id==='break-decrement' ? this.setState({ breakLength: this.state.breakLength-1, breakTimeLeft: (this.state.breakLength-1)*1000*60 }) : 
+                                                this.setState({ breakLength: this.state.breakLength+1, breakTimeLeft: (this.state.breakLength+1)*1000*60 });
   }
 
   changeSession(e) {
-    if(e.currentTarget.id==='session-decrement' && this.state.sessionLength===1)
-      this.setState({ sessionLength: 1 })
-    else if(e.currentTarget.id==='session-increment' && this.state.sessionLength===60)
-      this.setState({ sessionLength: 60 })
-    else 
-      e.currentTarget.id==='session-decrement' ? this.setState({ sessionLength: --this.state.sessionLength }) : this.setState({ sessionLength: ++this.state.sessionLength });
-  }
-
-  componentDidMount() {
-      // this.setState({
-        // timeLeft
-      // })
-      // this.initaliseClock();
-  }
-
+    if(!this.state.isRunning)
+      if(e.currentTarget.id==='session-decrement' && this.state.sessionLength===1)
+        this.setState({ sessionLength: 1, sessionTimeLeft: 1*1000*60 })
+      else if(e.currentTarget.id==='session-increment' && this.state.sessionLength===60)
+        this.setState({ sessionLength: 60, sessionTimeLeft: 60*1000*60 })
+      else 
+        e.currentTarget.id==='session-decrement' ? this.setState({ sessionLength: this.state.sessionLength-1, sessionTimeLeft: (this.state.sessionLength-1)*1000*60 }) : 
+                                                    this.setState({ sessionLength: this.state.sessionLength+1, sessionTimeLeft: (this.state.sessionLength+1)*1000*60 });
+  }  
+  
   startStopClick() {
+    if(!this.state.isRunning && this.state.sessionTimeLeft>0) { //if not running & session >0
+      this.setState({ sessionTimer: this.initSessionClock(this.state.sessionTimeLeft) });
+    }
+    // else if(!this.state.isRunning && this.state.breakTimeLeft>0) { //if not running & break >0
+    //   this.setState({ breakTimer: this.initBreakClock(this.state.breakTimeLeft) });
+    // }
+    else {
+      clearInterval(this.state.sessionTimer);
+      clearInterval(this.state.breakTimer);
+    }
 
+    this.setState({ isRunning: !this.state.isRunning });
   }
-
+  
   resetClick() {
-    this.setState({ breakLength: 5, sessionLength: 25 })
+    clearInterval(this.state.sessionTimer);
+    clearInterval(this.state.breakTimer);
+    this.setState(INTIALSTATE);
   }
-    
+
   render() {
     return(
       <div id="app-container" className="container bg-info mt-5 pt-5 text-center text-white">
@@ -129,21 +177,27 @@ class App extends React.Component {
           <SessionLength sessionLength={this.state.sessionLength} changeSession={this.changeSession}/>
         </div>
         <div className="pt-4 pb-2">
-          <h1 id="timer-label" className>Session</h1>
-          <h1 id="time-left">{this.state.timeLeft}</h1>
+          { this.state.sessionTimeLeft>=0 ?
+            <h1 id="timer-label">Session</h1> :
+            <h1 id="timer-label">Break</h1> 
+          }
+          { this.state.sessionTimeLeft>=0 ?
+            <h1 id="time-left">{this.getTimeLeft(this.state.sessionTimeLeft)}</h1> :
+            <h1 id="time-left">{this.getTimeLeft(this.state.breakTimeLeft)}</h1> 
+          }
         </div>
         <div className="row pb-5">
           <div className="col-6 text-right">
             <button id="start_stop" className="btn btn-info" onClick={this.startStopClick}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-play">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-play">
                 <polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-pause">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-pause">
                 <rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
             </button>
           </div>
           <div className="col-6 text-left">
             <button id="reset" className="btn btn-info" onClick={this.resetClick}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-refresh-cw"><polyline points="23 4 23 10 17 10">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-refresh-cw"><polyline points="23 4 23 10 17 10">
               </polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
             </button>
           </div>
