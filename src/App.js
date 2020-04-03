@@ -99,12 +99,19 @@ class App extends React.Component {
   
       this.setState({ sessionTimeLeft: time_ms }); 
 
+      if(this.state.sessionTimeLeft==0)
+        this.playsound();
       if(this.state.sessionTimeLeft<0){
         clearInterval(this.state.sessionTimer);
         this.setState({ breakTimer: this.initBreakClock(this.state.breakLength*60*1000)});
+        
       }
     }, 1000)
     return timer;
+  }
+
+  playsound(){
+    document.getElementById('beep').play();
   }
 
   initBreakClock(time_ms) {
@@ -115,7 +122,9 @@ class App extends React.Component {
 
       if(this.state.breakTimeLeft<=0) {
         clearInterval(this.state.breakTimer);
-        this.setState({ sessionTimer: this.initSessionClock(this.state.sessionLength*60*1000) })
+        this.setState({ sessionTimer: this.initSessionClock(this.state.sessionLength*60*1000) });
+        if(this.state.breakTimeLeft==0)
+          this.playsound();
       }
     }, 1000)
     return timer;
@@ -159,6 +168,8 @@ class App extends React.Component {
   }
   
   resetClick() {
+    if(document.getElementById('beep'))
+      document.getElementById('beep').pause();
     clearInterval(this.state.sessionTimer);
     clearInterval(this.state.breakTimer);
     this.setState(INTIALSTATE);
@@ -185,6 +196,7 @@ class App extends React.Component {
             <h1 id="time-left">{this.getTimeLeft(this.state.sessionTimeLeft)}</h1> :
             <h1 id="time-left">{this.getTimeLeft(this.state.breakTimeLeft)}</h1> 
           }
+          <audio id="beep" src="https://goo.gl/65cBl1"></audio>
         </div>
         <div className="row pb-5">
           <div className="col-6 text-right">
