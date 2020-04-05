@@ -71,7 +71,7 @@ class SessionLength extends React.Component {
 
 class App extends React.Component {
   constructor(props) {
-    super(props)
+     super(props)
     this.state = INTIALSTATE
 
     this.getTimeLeft = this.getTimeLeft.bind(this);
@@ -196,7 +196,7 @@ class App extends React.Component {
             <h1 id="time-left">{this.getTimeLeft(this.state.breakTimeLeft)}</h1>
             </div> 
           }
-          <audio id="beep" src="https://goo.gl/65cBl1" ref={(aud) => { this.audio = aud; }}></audio>
+          <audio id="beep" src="./BeepSound.wav" ref={(aud) => { this.audio = aud; }}></audio>
         </div>
         <div className="row pb-5">
           <div className="col-6 text-right">
