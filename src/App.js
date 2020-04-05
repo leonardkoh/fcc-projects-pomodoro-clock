@@ -4,9 +4,9 @@ import './App.css';
 const INTIALSTATE = {
   breakLength: 5,
   sessionLength: 25,
-  sessionTimeLeft: 25*1000*60, //ms
+  sessionTimeLeft: 25*1000*60, 
   sessionTimer: 0, //id of session timer
-  breakTimeLeft: 5*1000*60, //ms
+  breakTimeLeft: 5*1000*60, 
   breakTimer: 0, //id of break timer
   isRunning: false,
 }
@@ -99,12 +99,11 @@ class App extends React.Component {
   
       this.setState({ sessionTimeLeft: time_ms }); 
 
-      if(this.state.sessionTimeLeft===0)
+      if(this.state.sessionTimeLeft===0) {}
         this.audio.play();
-      if(this.state.sessionTimeLeft<0){
+      if(this.state.sessionTimeLeft<0) {
         clearInterval(this.state.sessionTimer);
-        this.setState({ breakTimer: this.initBreakClock(this.state.breakLength*60*1000)});
-        
+        this.setState({ breakTimer: this.initBreakClock(this.state.breakLength*60*1000)}); 
       }
     }, 1000)
     return timer;
@@ -113,19 +112,19 @@ class App extends React.Component {
   initBreakClock(time_ms) {
     let timer = setInterval(() => {
       time_ms -= 1000;
-
+      
       this.setState({ breakTimeLeft: time_ms}); 
-
-      if(this.state.breakTimeLeft<=0) {
-        clearInterval(this.state.breakTimer);
-        this.setState({ sessionTimer: this.initSessionClock(this.state.sessionLength*60*1000) });
-      if(this.state.breakTimeLeft===0)
+      
+      if(this.state.breakTimeLeft===0) {
         this.audio.play();
+      }
+      if(this.state.breakTimeLeft<0) {
+        this.setState({ sessionTimer: this.initSessionClock(this.state.sessionLength*60*1000), sessionTimeLeft:this.state.sessionLength*60*1000 }); 
+        clearInterval(this.state.breakTimer);
       }
     }, 1000)
     return timer;
   }
-  
 
   changeBreak(e) {
     if(e.currentTarget.id==='break-decrement' && this.state.breakLength<=1)
@@ -149,8 +148,11 @@ class App extends React.Component {
   }  
   
   startStopClick() {
-    if(!this.state.isRunning && this.state.sessionTimeLeft>0) { //if not running & session >0
+    if(!this.state.isRunning && this.state.sessionTimeLeft>=0) { //if not running & session >0
       this.setState({ sessionTimer: this.initSessionClock(this.state.sessionTimeLeft) });
+    }
+    else if(!this.state.isRunning && this.state.breakTimeLeft>=0) { //if not running & break >0
+      this.setState({ breakTimer: this.initBreakClock(this.state.breakTimeLeft) });
     }
     else {
       clearInterval(this.state.sessionTimer);
@@ -182,13 +184,15 @@ class App extends React.Component {
           <SessionLength sessionLength={this.state.sessionLength} changeSession={this.changeSession}/>
         </div>
         <div className="pt-4 pb-2">
-          { this.state.sessionTimeLeft>=0 ?
-            <h1 id="timer-label">Session</h1> :
+          { this.state.sessionTimeLeft>=0 || this.state.breakTimeLeft<0 ?
+            <div>
+              <h1 id="timer-label">Session</h1> 
+              <h1 id="time-left">{this.getTimeLeft(this.state.sessionTimeLeft)}</h1> 
+            </div> :
+            <div> 
             <h1 id="timer-label">Break</h1> 
-          }
-          { this.state.sessionTimeLeft>=0 ?
-            <h1 id="time-left">{this.getTimeLeft(this.state.sessionTimeLeft)}</h1> :
-            <h1 id="time-left">{this.getTimeLeft(this.state.breakTimeLeft)}</h1> 
+            <h1 id="time-left">{this.getTimeLeft(this.state.breakTimeLeft)}</h1>
+            </div> 
           }
           <audio id="beep" src="https://goo.gl/65cBl1" ref={(aud) => { this.audio = aud; }}></audio>
         </div>
