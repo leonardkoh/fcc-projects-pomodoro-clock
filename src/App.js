@@ -5,9 +5,9 @@ const INTIALSTATE = {
   breakLength: 5,
   sessionLength: 25,
   sessionTimeLeft: 25*1000*60, 
-  sessionTimer: 0, //id of session timer
+  sessionTimer: 0, 
   breakTimeLeft: 5*1000*60, 
-  breakTimer: 0, //id of break timer
+  breakTimer: 0, 
   isRunning: false,
 }
 
@@ -87,7 +87,9 @@ class App extends React.Component {
     let m = Math.floor((time_ms % (1000 * 60 * 60)) / (1000 * 60));
     let s = Math.floor((time_ms % (1000 * 60)) / 1000);
     
-    if(m>=0 && m<10)
+    if(time_ms===60*1000*60)
+      return `60:00`;
+    else if(m>=0 && m<10)
       return s>=0 && s<10 ? `0${m}:0${s}` : `0${m}:${s}`;
     else
       return s>=0 && s<10 ? `${m}:0${s}` : `${m}:${s}`;
@@ -138,9 +140,9 @@ class App extends React.Component {
 
   changeSession(e) {
     if(!this.state.isRunning)
-      if(e.currentTarget.id==='session-decrement' && this.state.sessionLength===1)
+      if(e.currentTarget.id==='session-decrement' && this.state.sessionLength<=1)
         this.setState({ sessionLength: 1, sessionTimeLeft: 1*1000*60 })
-      else if(e.currentTarget.id==='session-increment' && this.state.sessionLength===60)
+      else if(e.currentTarget.id==='session-increment' && this.state.sessionLength>=60)
         this.setState({ sessionLength: 60, sessionTimeLeft: 60*1000*60 })
       else 
         e.currentTarget.id==='session-decrement' ? this.setState({ sessionLength: this.state.sessionLength-1, sessionTimeLeft: (this.state.sessionLength-1)*1000*60 }) : 
@@ -148,10 +150,10 @@ class App extends React.Component {
   }  
   
   startStopClick() {
-    if(!this.state.isRunning && this.state.sessionTimeLeft>=0) { //if not running & session >0
+    if(!this.state.isRunning && this.state.sessionTimeLeft>=0) { 
       this.setState({ sessionTimer: this.initSessionClock(this.state.sessionTimeLeft) });
     }
-    else if(!this.state.isRunning && this.state.breakTimeLeft>=0) { //if not running & break >0
+    else if(!this.state.isRunning && this.state.breakTimeLeft>=0) { 
       this.setState({ breakTimer: this.initBreakClock(this.state.breakTimeLeft) });
     }
     else {
